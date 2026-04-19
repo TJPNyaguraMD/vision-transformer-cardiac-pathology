@@ -1,0 +1,58 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# PyCharm
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Data & Results (large files)
+data/raw/images/
+data/raw/*.csv
+data/raw/*.txt
+data/processed/
+results/checkpoints/
+results/attention_maps/
+results/analysis/
+results/figures/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project-specific
+*.log
+*.tmp
+model_*.pth
+
+# Additional ignores
+.venv/
+results/checkpoints_improved/
+data/splits/
+*.pth
+*.pt
+.env

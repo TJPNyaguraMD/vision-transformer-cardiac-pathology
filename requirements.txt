@@ -1,0 +1,44 @@
+# Core PyTorch & Deep Learning (CUDA 12.1 enabled)
+torch==2.5.1
+torchvision==0.20.1
+torchaudio==2.5.1
+timm==0.9.12
+
+# Data Processing & Analysis
+numpy==1.26.4
+pandas==2.2.0
+scikit-learn==1.4.1
+scipy==1.12.0
+
+# Visualization & Plotting
+matplotlib==3.8.3
+seaborn==0.13.0
+pillow==10.1.0
+
+# Training & Monitoring
+tensorboard==2.14.0
+tqdm==4.66.1
+
+# Utilities
+pyyaml==6.0.1
+python-dotenv==1.0.0
+
+# Attention Visualization & Interpretability
+captum==0.7.0
+opencv-python==4.8.0.76
+
+# Experiment Tracking & Hyperparameter Optimization
+wandb==0.15.12
+
+# Statistical Analysis
+statsmodels==0.14.0
+
+# Development & Interactive Computing
+jupyter==1.0.0
+ipython==8.16.0
+ipywidgets==8.1.0
+
+# Code Quality & Testing
+black==23.11.0
+flake8==6.1.0
+pytest==7.4.3
