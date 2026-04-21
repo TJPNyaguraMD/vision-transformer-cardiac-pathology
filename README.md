@@ -1,369 +1,172 @@
 # Vision Transformer for Cardiac Pathology Detection
 
-## Project Overview
+An interpretable deep learning pipeline that uses Vision Transformers (ViT) to detect cardiac pathology from chest X-rays, trained on the CheXchoNet dataset with gold-standard echocardiography labels.
 
-This research project applies Vision Transformers (ViT) to detect cardiac pathologies from chest X-rays using the CheXchoNet dataset. The focus is on **interpretable AI** — understanding what the model attends to and why it makes specific predictions.
-
-### Key Research Contributions
-- Comprehensive ViT application to cardiac X-ray pathology
-- Novel patch-level and head-level attention analysis
-- Discovery of head specialization across different pathologies
-- Clinical validation of ViT interpretability vs CNN methods
-
-### Dataset
-- **CheXchoNet**: 71,589 chest X-rays from 24,689 patients
-- **Gold-standard labels**: Echocardiography validation
-- **Binary tasks**: SLVH, DLV, Composite
-- **Image size**: 224×224 pixels
-- **Source**: PhysioNet (requires account)
+![Python](https://img.shields.io/badge/Python-3.12-blue.svg)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.5.1-red.svg)
+![CUDA](https://img.shields.io/badge/CUDA-12.1-green.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ---
 
-## Project Structure
+## 🎯 Project Overview
+
+This project applies a **ViT-Base (85.8M parameters)** pretrained on ImageNet-21k to detect cardiac pathology (SLVH, DLV, and Composite findings) from 71,589 chest radiographs. The pipeline addresses the challenge of **severe class imbalance (86% normal / 14% pathology)** using Focal Loss, and provides **interpretable attention visualizations** to support clinical trust.
+
+### Key Contributions
+- Transfer learning with ViT-Base on 71K chest X-rays
+- Focal Loss implementation to handle class imbalance
+- Attention heatmap extraction across all 12 transformer layers
+- Systematic layer-wise interpretability analysis
+
+---
+
+## 📊 Results
+
+### Performance Comparison: CrossEntropy vs. Focal Loss
+
+![Results Comparison](images/results_comparison.png)
+
+| Metric | Original (CrossEntropy) | Improved (Focal Loss) | Change |
+|--------|:----------------------:|:---------------------:|:------:|
+| AUC | 0.7717 | 0.7749 | +0.0032 |
+| Accuracy | 0.8655 | 0.5453 | -0.3202 |
+| **Sensitivity** | **0.1448** | **0.8690** | **+0.7242** ✅ |
+| Specificity | 0.9806 | 0.4936 | -0.4870 |
+
+### 🔑 Key Finding
+
+The original model achieved high accuracy (86.5%) but **missed 85.5% of pathology cases** — the classic failure mode of CrossEntropy on imbalanced data. Switching to Focal Loss (α=[1.0, 6.26], γ=2.0) raised sensitivity from **14.5% to 86.9%** — a critical improvement for disease screening where missed diagnoses carry serious consequences.
+
+> For cardiac screening, a model that catches 87% of pathology with some false alarms is far more clinically useful than one that misses 85% of disease while appearing "accurate."
+
+---
+
+## 🔍 Interpretability: Attention Visualizations
+
+The model's attention at **Layer 8** (the most interpretable layer, with 67% of heads showing meaningful specialization) focuses on cardiac anatomy, supporting clinical trust.
+
+### Normal Cases
+The model attends broadly across the thoracic cavity:
+
+| | | |
+|:-:|:-:|:-:|
+| ![Normal 1](images/Normal_case_00_layer_8.png) | ![Normal 2](images/Normal_case_01_layer_8.png) | ![Normal 3](images/Normal_case_02_layer_8.png) |
+
+### Composite Pathology Cases
+Attention concentrates on the cardiac region (mediastinum):
+
+| | | |
+|:-:|:-:|:-:|
+| ![Composite 1](images/Composite_case_00_layer_8.png) | ![Composite 2](images/Composite_case_01_layer_8.png) | ![Composite 3](images/Composite_case_02_layer_8.png) |
+
+**Color legend:** 🔴 Red = high attention · 🟡 Yellow = medium · 🔵 Blue = low attention
+
+---
+
+## 🏗️ Project Structure
 
 ```
-vision_transformer/
-├── data/                          # Data storage
-│   ├── raw/                       # Original CheXchoNet data
-│   │   ├── images/               # CXR images
-│   │   ├── metadata.csv          # Labels & metadata
-│   │   └── metadata.txt          # Additional info
-│   ├── processed/                # Train/val/test splits
-│   ├── splits/                   # Split indices (JSON)
-│   └── cache/                    # Cached preprocessed data
-│
-├── src/                           # Source code
-│   ├── data/                      # Data loading & preprocessing
-│   ├── models/                    # ViT architecture
-│   ├── training/                  # Training loops & metrics
-│   ├── interpretability/          # Attention analysis tools
-│   └── utils/                     # Helper functions
-│
-├── scripts/                       # Executable scripts
-│   ├── 01_prepare_dataset.py     # Data splitting
-│   ├── 02_train_vit.py           # Training
-│   ├── 03_extract_attention.py   # Attention extraction
-│   ├── 04_analyze_heads.py       # Head specialization
-│   └── 05_generate_visualizations.py
-│
-├── notebooks/                     # Jupyter notebooks for exploration
-│   ├── 01_exploratory_data_analysis.ipynb
-│   ├── 02_stratified_splitting.ipynb
-│   ├── 03_data_loading_verification.ipynb
-│   └── 04_vit_training.ipynb
-│
-├── results/                       # Model outputs
-│   ├── checkpoints/              # Model weights
-│   ├── attention_maps/           # Visualized attention
-│   ├── analysis/                 # Statistical results
-│   └── figures/                  # Publication figures
-│
-├── tests/                         # Unit tests
-├── requirements.txt               # Python dependencies
-├── .gitignore
-└── README.md (this file)
+vision-transformer-cardiac-pathology/
+├── scripts/
+│   ├── 01_prepare_dataset.py          # Stratified 60/15/25 split
+│   ├── 02_train_vit.py                # Baseline training (CrossEntropy)
+│   ├── 02b_train_vit_improved.py      # Improved training (Focal Loss)
+│   └── 03_extract_attention.py        # Attention map extraction
+├── src/                               # Shared modules
+├── docs/                              # Detailed documentation
+├── images/                            # Result charts & attention maps
+├── config.py                          # Project configuration
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## Setup Instructions
+## ⚙️ Setup & Usage
 
-### 1. Create Project Structure
+### Prerequisites
+- Python 3.12, CUDA 12.1, NVIDIA GPU (≥6GB VRAM recommended)
+- The [CheXchoNet dataset](https://physionet.org/content/chexchonet/) from PhysioNet
 
-Run the setup script from **Windows Command Prompt** or **PowerShell**:
-
+### Install
 ```bash
-# Navigate to project directory
-cd E:\PORTFOLIO\MEDICAL IMAGING\vision_transformer
-
-# Run setup script (make sure setup_project.bat is in this directory)
-setup_project.bat
-```
-
-This will create all necessary folders and `__init__.py` files.
-
-### 2. Move Your Data
-
-After running the setup script:
-
-```
-Copy your CheXchoNet data to:
-- E:\PORTFOLIO\MEDICAL IMAGING\vision_transformer\data\raw\images\
-- E:\PORTFOLIO\MEDICAL IMAGING\vision_transformer\data\raw\metadata.csv
-- E:\PORTFOLIO\MEDICAL IMAGING\vision_transformer\data\raw\metadata.txt
-```
-
-### 3. Set Up Python Virtual Environment
-
-Open **Command Prompt** and run:
-
-```bash
-# Navigate to project
-cd E:\PORTFOLIO\MEDICAL IMAGING\vision_transformer
-
-# Create virtual environment
-python -m venv venv
-
-# Activate it
-venv\Scripts\activate
-
-# Install dependencies
+git clone https://github.com/TJPNyaguraMD/vision-transformer-cardiac-pathology.git
+cd vision-transformer-cardiac-pathology
+python -m venv .venv
+.\.venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure PyCharm
+### Configure
+Edit `config.py` to point to your local dataset paths.
 
-1. Open PyCharm
-2. **File → Open** → Select `E:\PORTFOLIO\MEDICAL IMAGING\vision_transformer`
-3. **File → Settings → Project → Python Interpreter**
-4. Click gear icon → **Add**
-5. Select **Existing Environment**
-6. Navigate to: `E:\PORTFOLIO\MEDICAL IMAGING\vision_transformer\venv\Scripts\python.exe`
-7. Click **OK**
-
----
-
-## Research Pipeline
-
-### Phase 1: Data Preparation (Current Phase)
-- ✅ Organize raw data
-- ⬜ Create stratified train/val/test splits (60/15/25%)
-- ⬜ Implement data loading pipeline
-- ⬜ Verify data integrity
-
-**Next Step**: Run `scripts/01_prepare_dataset.py`
-
-### Phase 2: Model Training
-- ⬜ Train ViT-Base from scratch
-- ⬜ Track metrics (AUC, accuracy, loss)
-- ⬜ Save checkpoints
-- **Target**: AUC ≥ 0.87
-
-**Script**: `scripts/02_train_vit.py`
-
-### Phase 3: Attention Analysis
-- ⬜ Extract patch-level attention weights
-- ⬜ Visualize attention patterns
-- ⬜ Analyze head specialization
-- ⬜ Correlate with cardiac anatomy
-
-**Script**: `scripts/03_extract_attention.py`
-
-### Phase 4: Novel Research & Insights
-- ⬜ Discover head specialization patterns
-- ⬜ Test clinical outcome prediction
-- ⬜ Compare ViT vs CNN interpretability
-- ⬜ Generate publication figures
-
-**Script**: `scripts/04_analyze_heads.py`
-
-### Phase 5: Validation & Publication
-- ⬜ Radiologist validation study
-- ⬜ Faithfulness testing (deletion/insertion)
-- ⬜ Write manuscript
-- ⬜ Submit to Medical Image Analysis
-
----
-
-## Key Hyperparameters
-
-### Model Configuration
-```python
-model_type: "vit_base_patch16_224"
-num_heads: 12
-hidden_dim: 768
-num_layers: 12
-patch_size: 16
-image_size: 224
-```
-
-### Training Configuration
-```python
-learning_rate: 1e-4
-batch_size: 32
-num_epochs: 100
-warmup_epochs: 5
-weight_decay: 0.01
-optimizer: "AdamW"
-scheduler: "CosineAnnealingLR"
-```
-
-### Dataset Configuration
-```python
-train_split: 0.60
-val_split: 0.15
-test_split: 0.25
-stratify_by: "pathology"  # SLVH, DLV, Composite
-normalize: "ImageNet"     # or custom CXR statistics
-```
-
----
-
-## Expected Results
-
-| Metric | Target | Notes |
-|--------|--------|-------|
-| **Train AUC** | 0.92+ | Should show good fit |
-| **Val AUC** | 0.88-0.89 | Generalization target |
-| **Test AUC** | 0.87-0.88 | Final performance |
-| **Head Specialization** | 3-5 distinct patterns | Different heads focus on different anatomy |
-| **Patch Correlation** | r > 0.7 with anatomy | Attention aligns with cardiac regions |
-
----
-
-## Dependencies
-
-**Core Libraries**:
-- PyTorch 2.1.2 + CUDA support
-- torchvision 0.16.2
-- timm 0.9.12 (ViT models from Meta)
-
-**Data & Processing**:
-- NumPy, Pandas, scikit-learn
-
-**Visualization**:
-- Matplotlib, Seaborn, Pillow
-
-**Training**:
-- TensorBoard (monitoring), tqdm (progress bars)
-
-See `requirements.txt` for complete list with versions.
-
----
-
-## Usage Examples
-
-### Running the Pipeline
-
+### Run the Pipeline
 ```bash
-# Activate virtual environment
-venv\Scripts\activate
-
-# Step 1: Prepare dataset
-python scripts/01_prepare_dataset.py
-
-# Step 2: Train ViT
-python scripts/02_train_vit.py --epochs 100 --batch_size 32
-
-# Step 3: Extract attention weights
-python scripts/03_extract_attention.py --checkpoint results/checkpoints/best_model.pth
-
-# Step 4: Analyze head specialization
-python scripts/04_analyze_heads.py
-
-# Step 5: Generate publication figures
-python scripts/05_generate_visualizations.py
-```
-
-### Using Jupyter Notebooks
-
-```bash
-# Activate environment
-venv\Scripts\activate
-
-# Launch Jupyter
-jupyter notebook
-
-# Open notebooks in order:
-# 1. 01_exploratory_data_analysis.ipynb
-# 2. 02_stratified_splitting.ipynb
-# 3. 03_data_loading_verification.ipynb
-# 4. 04_vit_training.ipynb
+python scripts/01_prepare_dataset.py        # 1. Create splits
+python scripts/02_train_vit.py              # 2. Baseline training
+python scripts/02b_train_vit_improved.py    # 3. Focal Loss training
+python scripts/03_extract_attention.py      # 4. Attention visualization
 ```
 
 ---
 
-## Development Workflow
+## 🔬 Technical Details
 
-1. **Create a branch** for new features:
-   ```bash
-   git checkout -b feature/attention-visualization
-   ```
-
-2. **Write code** following PEP 8 standards
-
-3. **Test** your code:
-   ```bash
-   python -m pytest tests/
-   ```
-
-4. **Commit** with meaningful messages:
-   ```bash
-   git add .
-   git commit -m "Add patch-level attention analysis"
-   ```
-
-5. **Push** and create pull request
+| Component | Configuration |
+|-----------|---------------|
+| Architecture | ViT-Base, patch size 16, 196 patches, 12 layers, 12 heads |
+| Parameters | 85.8M (all trainable) |
+| Input size | 224×224 |
+| Optimizer | AdamW (lr=1e-4, weight_decay=0.01) |
+| Scheduler | Cosine annealing with 5-epoch warmup |
+| Batch size | 32 |
+| Loss (baseline) | CrossEntropy |
+| Loss (improved) | Focal Loss (α=[1.0, 6.26], γ=2.0) |
+| Early stopping | Patience = 15 epochs |
+| Dataset splits | Train 42,953 / Val 10,738 / Test 17,898 (stratified) |
 
 ---
 
-## Troubleshooting
+## 📚 Documentation
 
-### Issue: Virtual environment not found
-**Solution**: Ensure you're in the project directory when creating venv:
-```bash
-cd E:\PORTFOLIO\MEDICAL IMAGING\vision_transformer
-python -m venv venv
-```
-
-### Issue: CUDA out of memory
-**Solution**: Reduce batch size in config:
-```python
-batch_size: 16  # or 8 for smaller GPU
-```
-
-### Issue: Data not found
-**Solution**: Verify file structure matches expected layout:
-```
-data/raw/
-├── images/
-├── metadata.csv
-└── metadata.txt
-```
-
-### Issue: Import errors in PyCharm
-**Solution**: 
-1. Open **File → Settings → Project → Python Interpreter**
-2. Verify interpreter points to `venv\Scripts\python.exe`
-3. Reinstall packages: `pip install -r requirements.txt`
+For deeper reading, see the [`docs/`](docs/) folder:
+- [`PROJECT_SUMMARY.md`](docs/PROJECT_SUMMARY.md) — Complete project overview
+- [`TRAINING_APPROACH_DETAILED.md`](docs/TRAINING_APPROACH_DETAILED.md) — Training methodology
+- [`TRAINING_RESULTS_README.md`](docs/TRAINING_RESULTS_README.md) — Detailed metrics
+- [`ATTENTION_ANALYSIS_REPORT.md`](docs/ATTENTION_ANALYSIS_REPORT.md) — Layer-by-layer interpretability
+- [`STRATIFIED_SPLITTING_EXPLANATION.md`](docs/STRATIFIED_SPLITTING_EXPLANATION.md) — Data splitting rationale
 
 ---
 
-## Publication Timeline
+## 🚧 Limitations & Future Work
 
-- **Weeks 1-3**: Data preparation & ViT training
-- **Weeks 4-6**: Attention analysis & visualization
-- **Weeks 7-9**: Novel insights & head specialization
-- **Weeks 10-12**: Clinical validation & expert review
-- **Weeks 13-16**: Manuscript writing & submission
-
-**Target Venue**: Medical Image Analysis (Tier-1)
-**Expected Citations**: 20-40/year (high-impact)
+- **Specificity trade-off:** Focal Loss improved recall at the cost of precision. Threshold calibration or a two-stage model could help balance the two.
+- **Binary classification:** The current model lumps SLVH and DLV into a single "Composite" label. Multi-label classification would provide more granular clinical output.
+- **External validation:** All results are from a single dataset (CheXchoNet). Validation on an independent cohort (e.g., MIMIC-CXR) is needed.
+- **Attention ≠ explanation:** Attention maps are correlational, not causal. Integrated gradients or SHAP would provide complementary interpretability.
 
 ---
 
-## Key References
+## 📖 Citation & Dataset
 
-- Dosovitskiy et al. (2021). "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale"
-- Chen et al. (2023). "CheXchoNet: Cardiac Pathology Detection from Chest X-rays"
-- Simonyan & Zisserman. "Very Deep Convolutional Networks for Large-Scale Image Recognition"
+**Dataset:** Balayla, J. et al. *CheXchoNet: A Chest Radiograph Dataset with Gold-Standard Echocardiography Labels.* PhysioNet (2024).
 
----
+**Models:** Dosovitskiy, A. et al. *An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale.* ICLR 2021.
 
-## Contact & Support
-
-For questions about this project, refer to:
-- Project documentation in `results/analysis/`
-- Jupyter notebooks in `notebooks/`
-- Inline code comments in `src/`
+**Implementation:** Ross Wightman's [`timm`](https://github.com/huggingface/pytorch-image-models) library.
 
 ---
 
-## License
+## 📝 License
 
-This project is for research and educational purposes.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**Last Updated**: April 2026
-**Status**: Setup Phase ✓ | Data Preparation (Current)
+## 👤 Author
+
+**Thabani JP Nyagura, MD**
+GitHub: [@TJPNyaguraMD](https://github.com/TJPNyaguraMD)
+
+*Built as part of a portfolio exploring interpretable AI in medical imaging.*
