@@ -5,7 +5,7 @@
 This research project applies Vision Transformers (ViT) to detect cardiac pathologies from chest X-rays using the CheXchoNet dataset. The focus is on **interpretable AI** — understanding what the model attends to and why it makes specific predictions.
 
 ### Key Research Contributions
-- First comprehensive ViT application to cardiac X-ray pathology
+- Comprehensive ViT application to cardiac X-ray pathology
 - Novel patch-level and head-level attention analysis
 - Discovery of head specialization across different pathologies
 - Clinical validation of ViT interpretability vs CNN methods
